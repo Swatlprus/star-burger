@@ -78,4 +78,4 @@ def register_order(request):
             product=item['product'],
             quantity=item['quantity'],
         )
-    return Response({JSONRenderer().render(serializer.data)})
+    return Response(serializer.data)

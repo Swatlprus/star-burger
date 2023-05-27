@@ -1,17 +1,11 @@
 from django.http import JsonResponse
 from django.templatetags.static import static
-from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from phonenumber_field.serializerfields import PhoneNumberField
-from rest_framework import serializers
-from django.core.exceptions import ObjectDoesNotExist
 
 from .models import Product, Order
 
-class PhoneNumberSerializer(serializers.Serializer):
-    number = PhoneNumberField(region='RU')
-
+from .serializers import OrderSerializer
 
 def banners_list_api(request):
     # FIXME move data to db?
@@ -67,111 +61,20 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
-    data = request.data
-    if 'products' not in data.keys():
-        content = {
-            'error': 'products: Обязательное поле',
-        }
-        return Response(
-            content,
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    elif not isinstance(data['products'], list):
-        content = {
-            'error': 'products: Ожидался list со значениями, но был получен str.',
-        }
-        return Response(
-            content,
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    elif data['products'] is None:
-        content = {
-            'error': 'products: это поле не может быть пустым.',
-        }
-        return Response(
-            content,
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    elif not data['products']:
-        content = {
-            'error': 'products: Этот список не может быть пустым',
-        }
-        return Response(
-            content,
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    elif (data['firstname'] is None and data['lastname'] is None and data['phonenumber'] is None and data['address'] is None):
-        content = {
-            'error': 'firstname, lastname, phonenumber, address: Это поле не может быть пустым..',
-        }
-        return Response(
-            content,
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    elif not (set(['firstname', 'lastname', 'phonenumber', 'address']) <= set(data.keys())):
-        content = {
-            'error': 'firstname, lastname, phonenumber, address: \
-                Обязательное поле.',
-        }
-        return Response(
-            content,
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    elif data['firstname'] is None:
-        content = {
-            'error': 'firstname: Это поле не может быть пустым.',
-        }
-        return Response(
-            content,
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    elif data['phonenumber'] == '':
-        content = {
-            'error': 'phonenumber: Это поле не может быть пустым.',
-        }
-        return Response(
-            content,
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    serializer_data = OrderSerializer(data=request.data)
+    serializer_data.is_valid(raise_exception=True)
 
-    elif not (PhoneNumberSerializer(data={"number": data['phonenumber']})).is_valid():
-        content = {
-            'error': 'phonenumber: Введен некорректный номер телефона.',
-        }
-        return Response(
-            content,
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    elif isinstance(data['firstname'], list):
-        content = {
-            'error': 'firstname: Not a valid string',
-        }
-        return Response(
-            content,
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    for dish in data['products']:
-        try:
-            Product.objects.get(pk=dish['product'])
-        except ObjectDoesNotExist:
-            content = {
-                'error': f"products: Недопустимый первичный ключ {dish['product']}"
-            }
-            return Response(
-                content,
-                status=status.HTTP_400_BAD_REQUEST
-            )
     order_create, created = Order.objects.get_or_create(
-        firstname=data['firstname'],
-        lastname=data['lastname'],
-        phonenumber=data['phonenumber'],
-        address=data['address'],
+        firstname=serializer_data.validated_data['firstname'],
+        lastname=serializer_data.validated_data['lastname'],
+        phonenumber=serializer_data.validated_data['phonenumber'],
+        address=serializer_data.validated_data['address'],
     )
     if not created:
         return
-    for item in data['products']:
+    for item in serializer_data.validated_data['products']:
         order_create.items.create(
-            product=Product.objects.get(pk=item['product']),
+            product=item['product'],
             quantity=item['quantity'],
         )
     return Response({})

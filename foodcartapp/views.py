@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 from django.templatetags.static import static
-import json
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -62,24 +62,45 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
-    try:
-        data = request.data
-        print(data)
-        order_create, created = Order.objects.get_or_create(
-            firstname=data['firstname'],
-            lastname=data['lastname'],
-            phonenumber=data['phonenumber'],
-            address=data['address'],
+    data = request.data
+    if 'products' not in data.keys():
+        content = {
+            'error': 'products: Обязательное поле',
+        }
+        return Response(
+            content,
+            status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
         )
-        if not created:
-            return
-        for item in data['products']:
-            order_create.items.create(
-                product=Product.objects.get(pk=item['product']),
-                quantity=item['quantity'],
-            )
-    except ValueError:
-        return Response({
-            'error': 'Ошибка',
-        })
+    elif not isinstance(data['products'], list):
+        content = {
+            'error': 'Ожидался list со значениями, но был получен str.',
+        }
+        return Response(content, status=status.HTTP_400_BAD_REQUEST)
+    elif data['products'] is None:
+        content = {
+            'error': 'products: это поле не может быть пустым.',
+        }
+        return Response(content, status=status.HTTP_400_BAD_REQUEST)
+    elif not data['products']:
+        content = {
+            'error': 'products: Этот список не может быть пустым',
+        }
+        return Response(
+            content,
+            status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
+        )
+
+    order_create, created = Order.objects.get_or_create(
+        firstname=data['firstname'],
+        lastname=data['lastname'],
+        phonenumber=data['phonenumber'],
+        address=data['address'],
+    )
+    if not created:
+        return
+    for item in data['products']:
+        order_create.items.create(
+            product=Product.objects.get(pk=item['product']),
+            quantity=item['quantity'],
+        )
     return Response({})

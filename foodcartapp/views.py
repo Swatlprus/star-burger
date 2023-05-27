@@ -3,9 +3,14 @@ from django.templatetags.static import static
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
+from phonenumber_field.serializerfields import PhoneNumberField
+from rest_framework import serializers
+from django.core.exceptions import ObjectDoesNotExist
 
 from .models import Product, Order
+
+class PhoneNumberSerializer(serializers.Serializer):
+    number = PhoneNumberField(region='RU')
 
 
 def banners_list_api(request):
@@ -69,27 +74,93 @@ def register_order(request):
         }
         return Response(
             content,
-            status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
+            status=status.HTTP_400_BAD_REQUEST
         )
     elif not isinstance(data['products'], list):
         content = {
-            'error': 'Ожидался list со значениями, но был получен str.',
+            'error': 'products: Ожидался list со значениями, но был получен str.',
         }
-        return Response(content, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            content,
+            status=status.HTTP_400_BAD_REQUEST
+        )
     elif data['products'] is None:
         content = {
             'error': 'products: это поле не может быть пустым.',
         }
-        return Response(content, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            content,
+            status=status.HTTP_400_BAD_REQUEST
+        )
     elif not data['products']:
         content = {
             'error': 'products: Этот список не может быть пустым',
         }
         return Response(
             content,
-            status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    elif (data['firstname'] is None and data['lastname'] is None and data['phonenumber'] is None and data['address'] is None):
+        content = {
+            'error': 'firstname, lastname, phonenumber, address: Это поле не может быть пустым..',
+        }
+        return Response(
+            content,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    elif not (set(['firstname', 'lastname', 'phonenumber', 'address']) <= set(data.keys())):
+        content = {
+            'error': 'firstname, lastname, phonenumber, address: \
+                Обязательное поле.',
+        }
+        return Response(
+            content,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    elif data['firstname'] is None:
+        content = {
+            'error': 'firstname: Это поле не может быть пустым.',
+        }
+        return Response(
+            content,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    elif data['phonenumber'] == '':
+        content = {
+            'error': 'phonenumber: Это поле не может быть пустым.',
+        }
+        return Response(
+            content,
+            status=status.HTTP_400_BAD_REQUEST
         )
 
+    elif not (PhoneNumberSerializer(data={"number": data['phonenumber']})).is_valid():
+        content = {
+            'error': 'phonenumber: Введен некорректный номер телефона.',
+        }
+        return Response(
+            content,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    elif isinstance(data['firstname'], list):
+        content = {
+            'error': 'firstname: Not a valid string',
+        }
+        return Response(
+            content,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    for dish in data['products']:
+        try:
+            Product.objects.get(pk=dish['product'])
+        except ObjectDoesNotExist:
+            content = {
+                'error': f"products: Недопустимый первичный ключ {dish['product']}"
+            }
+            return Response(
+                content,
+                status=status.HTTP_400_BAD_REQUEST
+            )
     order_create, created = Order.objects.get_or_create(
         firstname=data['firstname'],
         lastname=data['lastname'],

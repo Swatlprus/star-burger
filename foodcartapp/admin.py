@@ -115,6 +115,7 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [
         OrderItemInline
     ]
+
     list_display = (
         'id',
         'firstname',

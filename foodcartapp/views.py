@@ -77,5 +77,6 @@ def register_order(request):
         order_create.items.create(
             product=item['product'],
             quantity=item['quantity'],
+            price=item['product'].price,
         )
     return Response(serializer.data)

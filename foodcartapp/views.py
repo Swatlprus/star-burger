@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from django.db import transaction
 
 from .models import Product, Order
-
 from .serializers import OrderSerializer
+
 
 def banners_list_api(request):
     # FIXME move data to db?

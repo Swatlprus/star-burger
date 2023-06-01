@@ -144,7 +144,19 @@ class Order(models.Model):
         verbose_name='Статус заказа',
         max_length=9,
         choices=STATUS_CHOICES,
-        default='Принят',
+        default='Raw',
+        db_index=True,
+    )
+    PAYMENT_CHOICES = [
+        ('Cash', 'Наличностью'),
+        ('E-money', 'Электронно'),
+        ('No choice', 'Не выбрано'),
+    ]
+    payment = models.CharField(
+        verbose_name='Способ оплаты',
+        max_length=16,
+        choices=PAYMENT_CHOICES,
+        default='No choice',
         db_index=True,
     )
     firstname = models.CharField(

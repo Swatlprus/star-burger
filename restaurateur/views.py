@@ -1,4 +1,8 @@
 from django import forms
+import requests
+from django.conf import settings
+from geopy import distance
+from django.db import transaction
 from django.shortcuts import redirect, render
 from django.views import View
 from django.urls import reverse_lazy
@@ -8,7 +12,11 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
 
-from foodcartapp.models import Product, Restaurant, Order, OrderItem, RestaurantMenuItem
+from foodcartapp.models import Product
+from foodcartapp.models import Restaurant
+from foodcartapp.models import Order
+from foodcartapp.models import RestaurantMenuItem
+from distance.models import Place
 
 
 class Login(forms.Form):
@@ -90,9 +98,50 @@ def view_restaurants(request):
     })
 
 
+def fetch_coordinates(apikey, address):
+    base_url = "https://geocode-maps.yandex.ru/1.x"
+    try:
+        response = requests.get(base_url, params={
+            "geocode": address,
+            "apikey": apikey,
+            "format": "json",
+        })
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        print('Oops. HTTP Error occured')
+        print('Response is: {content}'.format(content=err.response.content))
+
+    found_places = response.json()['response']['GeoObjectCollection']['featureMember']
+
+    if not found_places:
+        return None
+
+    most_relevant = found_places[0]
+    lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
+    return lat, lon
+
+
+@transaction.atomic
+def get_coordinates(address):
+    place, created = Place.objects.get_or_create(address=address)
+
+    if not created:
+        return place.lat, place.lon
+
+    yandex_geo_key = settings.YANDEX_GEO_KEY
+    lat, lon = fetch_coordinates(yandex_geo_key, address)
+    place.lat = lat
+    place.lon = lon
+    place.save()
+    return lat, lon
+
+
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    order_items = Order.objects.all().count_price().exclude(status='Completed')
+    order_items = Order.objects.all().count_price()\
+        .exclude(status='Completed')\
+        .prefetch_related('items')\
+        .prefetch_related('items__product')
 
     restaurant_menu_items = RestaurantMenuItem.objects\
         .filter(availability=True)\
@@ -111,8 +160,12 @@ def view_orders(request):
                 order.restaurants = set(product_restaurants)
                 continue
             order.restaurants &= set(product_restaurants)
+        for restaurant in order.restaurants:
+            order_coords = get_coordinates(order.address)
+            restaurant_coords = get_coordinates(restaurant.address)
+            restaurant_distance = distance.distance(order_coords, restaurant_coords).km
+            restaurant.name = f'{restaurant.name} - {round(restaurant_distance, 2)} км'
 
-            print(order.restaurants)
     return render(request, template_name='order_items.html', context={
         'order_items': order_items,
     })

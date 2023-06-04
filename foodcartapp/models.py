@@ -154,7 +154,7 @@ class Order(models.Model):
     ]
     payment = models.CharField(
         verbose_name='Способ оплаты',
-        max_length=16,
+        max_length=9,
         choices=PAYMENT_CHOICES,
         default='No choice',
         db_index=True,
@@ -204,6 +204,14 @@ class Order(models.Model):
         blank=True,
         null=True,
         db_index=True,
+    )
+    restaurant = models.ForeignKey(
+        Restaurant,
+        related_name='orders',
+        verbose_name='Ресторан',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
     )
 
     objects = OrderQuerySet.as_manager()

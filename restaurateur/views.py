@@ -125,7 +125,6 @@ def fetch_coordinates(apikey, address):
     return lat, lon
 
 
-@transaction.atomic
 def get_coordinates(address):
     place, created = Place.objects.get_or_create(address=address)
 
@@ -133,9 +132,13 @@ def get_coordinates(address):
         return place.lat, place.lon
 
     yandex_geo_key = settings.YANDEX_GEO_KEY
-    lat, lon = fetch_coordinates(yandex_geo_key, address)
-    place.lat = lat
-    place.lon = lon
+    if fetch_coordinates(yandex_geo_key, address) is None:
+        place.lat = ''
+        place.lon = ''
+    else:
+        lat, lon = fetch_coordinates(yandex_geo_key, address)
+        place.lat = lat
+        place.lon = lon
     place.save()
     return lat, lon
 

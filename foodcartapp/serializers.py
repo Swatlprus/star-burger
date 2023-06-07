@@ -5,10 +5,6 @@ from rest_framework import serializers
 from .models import Order, OrderItem
 
 
-class PhoneNumberSerializer(serializers.Serializer):
-    number = PhoneNumberField(region='RU')
-
-
 class OrderItemSerializer(ModelSerializer):
     class Meta:
         model = OrderItem
@@ -31,8 +27,3 @@ class OrderSerializer(ModelSerializer):
             'address',
             'products'
         ]
-
-    def validate_phonenumber(self, value):
-        if not (PhoneNumberSerializer(data={"number": value})).is_valid():
-            raise ValidationError('Введен некорректный номер телефона')
-        return value

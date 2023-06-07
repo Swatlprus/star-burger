@@ -200,7 +200,6 @@ class Order(models.Model):
         verbose_name='Комментарий',
         max_length=500,
         blank=True,
-        null=True,
     )
     registrated_at = models.DateTimeField(
         verbose_name='Дата создания',

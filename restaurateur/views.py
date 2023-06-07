@@ -144,12 +144,9 @@ def get_coordinates(address):
 def view_orders(request):
     order_items = Order.objects.count_price()\
         .exclude(status='Completed')\
-        .prefetch_related('items')\
-        .prefetch_related('items__product')
+        .prefetch_items()
 
-    restaurant_menu_items = RestaurantMenuItem.objects\
-        .filter(availability=True)\
-        .select_related('restaurant', 'product')
+    restaurant_menu_items = RestaurantMenuItem.objects.available()
 
     for order in order_items:
         order.restaurants = set()

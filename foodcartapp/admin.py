@@ -127,9 +127,9 @@ class OrderAdmin(admin.ModelAdmin):
 
     def response_change(self, request, obj):
         allowed_hosts = settings.ALLOWED_HOSTS
-        res = super().response_post_save_change(request, obj)
+        response = super().response_change(request, obj)
         if "next" in request.GET:
             if url_has_allowed_host_and_scheme(request.GET['next'], allowed_hosts):
-                return redirect(request.GET['next'])
+                return redirect('restaurateur:view_orders')
         else:
-            return res
+            return response

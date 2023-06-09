@@ -5,7 +5,7 @@ from .models import Order, OrderItem
 class OrderItemSerializer(ModelSerializer):
     class Meta:
         model = OrderItem
-        fields = ['product', 'quantity', 'price']
+        fields = ['product', 'quantity']
 
 
 class OrderSerializer(ModelSerializer):
@@ -26,18 +26,18 @@ class OrderSerializer(ModelSerializer):
         ]
 
     def create(self, validated_data):
-        products_data = validated_data.pop('products')
-        order = super().create(validated_data)
-
-        order_items = [
-            OrderItem(
-                product=product_data['product'],
-                price=product_data['product'].price,
-                quantity=product_data['quantity'],
-                order=order,
+        order_create, created = Order.objects.get_or_create(
+            firstname=validated_data['firstname'],
+            lastname=validated_data['lastname'],
+            phonenumber=validated_data['phonenumber'],
+            address=validated_data['address'],
+        )
+        if not created:
+            return
+        for item in validated_data['products']:
+            order_create.items.create(
+                product=item['product'],
+                quantity=item['quantity'],
+                price=item['product'].price,
             )
-            for product_data in products_data
-        ]
-
-        OrderItem.objects.bulk_create(order_items)
-        return order
+        return order_create

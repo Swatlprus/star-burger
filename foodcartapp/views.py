@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.db import transaction
 
-from .models import Product, Order
+from .models import Product
 from .serializers import OrderSerializer
 
 
@@ -64,5 +64,7 @@ def product_list_api(request):
 @transaction.atomic
 def register_order(request):
     serializer = OrderSerializer(data=request.data)
+    print(request.data)
     serializer.is_valid(raise_exception=True)
+    serializer.save()
     return Response(serializer.data)

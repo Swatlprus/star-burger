@@ -1,4 +1,5 @@
 from rest_framework.serializers import ModelSerializer
+from django.db import transaction
 from .models import Order, OrderItem
 
 
@@ -25,6 +26,7 @@ class OrderSerializer(ModelSerializer):
             'products',
         ]
 
+    @transaction.atomic
     def create(self, validated_data):
         order_create = Order.objects.create(
             firstname=validated_data['firstname'],

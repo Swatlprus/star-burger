@@ -26,14 +26,12 @@ class OrderSerializer(ModelSerializer):
         ]
 
     def create(self, validated_data):
-        order_create, created = Order.objects.get_or_create(
+        order_create = Order.objects.create(
             firstname=validated_data['firstname'],
             lastname=validated_data['lastname'],
             phonenumber=validated_data['phonenumber'],
             address=validated_data['address'],
         )
-        if not created:
-            return
         for item in validated_data['products']:
             order_create.items.create(
                 product=item['product'],

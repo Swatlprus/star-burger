@@ -142,7 +142,9 @@ class OrderQuerySet(models.QuerySet):
         return total_price
 
     def prefetch_items(self):
-        prefetch = self.prefetch_related('items')\
+        prefetch = self.count_price()\
+            .exclude(status='Completed')\
+            .prefetch_related('items')\
             .prefetch_related('items__product')
         return prefetch
 

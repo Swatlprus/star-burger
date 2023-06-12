@@ -132,22 +132,21 @@ def get_coordinates(address):
         return place.lat, place.lon
 
     yandex_geo_key = settings.YANDEX_GEO_KEY
-    if fetch_coordinates(yandex_geo_key, address) is None:
-        place.lat = ''
-        place.lon = ''
-    else:
-        lat, lon = fetch_coordinates(yandex_geo_key, address)
-        place.lat = lat
-        place.lon = lon
+    place.lat, place.lon = ''
+    try:
+        coords = fetch_coordinates(yandex_geo_key, address)
+        if coords:
+            place.lat, place.lon = coords
+    except Exception as err:
+        print('Oops. Error occured')
+        print('Response is: {content}'.format(content=err.response.content))
     place.save()
-    return lat, lon
+    return place.lat, place.lon
 
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    order_items = Order.objects.count_price()\
-        .exclude(status='Completed')\
-        .prefetch_items()
+    order_items = Order.objects.prefetch_items()
 
     restaurant_menu_items = RestaurantMenuItem.objects.available()
 

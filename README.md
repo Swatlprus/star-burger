@@ -2,6 +2,8 @@
 
 Это сайт сети ресторанов Star Burger. Здесь можно заказать превосходные бургеры с доставкой на дом.
 
+Демо-сайта находится по адресу - https://wascall.ru/
+
 ![скриншот сайта](https://dvmn.org/filer/canonical/1594651635/686/)
 
 
@@ -19,6 +21,8 @@
 ```
 #!/bin/bash
 set -e
+
+source .env
 
 echo '----Start command git commit----'
 git commit -m 'Local commit'
@@ -56,10 +60,13 @@ echo '----Restart Nginx----'
 systemctl restart nginx
 
 echo '----Send status in Rollbar----'
-hash=git rev-parse HEAD
+hash=$(git rev-parse HEAD)
+
+export ROLLBAR_TOKEN
+ROLLBAR_TOKEN=$ROLLBAR_TOKEN
 
 curl https://api.rollbar.com/api/1/deploy/ \
-  -F access_token=ROLLBAR_TOKEN \
+  -F access_token=$ROLLBAR_TOKEN \
   -F environment=production \
   -F revision=$hash \
   -F local_username=$USER \

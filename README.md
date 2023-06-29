@@ -14,7 +14,7 @@
 Третий интерфейс — это админка. Преимущественно им пользуются программисты при разработке сайта. Также сюда заходит менеджер, чтобы обновить меню ресторанов Star Burger.
 
 ## Автоматический деплой проекта
-Создайте в корне проекта файл deploy_star_burger.sh с таким содержимым:
+Создайте в корне проекта файл deploy_star_burger.sh с таким содержимым. Не забудьте поставить ROLLBAR_TOKEN:
 
 ```
 #!/bin/bash
@@ -55,7 +55,19 @@ systemctl daemon-reload
 echo '----Restart Nginx----'
 systemctl restart nginx
 
+echo '----Send status in Rollbar----'
+hash=git rev-parse HEAD
+
+curl https://api.rollbar.com/api/1/deploy/ \
+  -F access_token=ROLLBAR_TOKEN \
+  -F environment=production \
+  -F revision=$hash \
+  -F local_username=$USER \
+  -F comment="Deployed new version" \
+  -F status=finished
+
 echo '----SUCCES Deploy----'
+
 ```
 
 Выдайте ему права на исполнение:

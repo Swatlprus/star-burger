@@ -13,11 +13,66 @@
 
 Третий интерфейс — это админка. Преимущественно им пользуются программисты при разработке сайта. Также сюда заходит менеджер, чтобы обновить меню ресторанов Star Burger.
 
-## Как запустить dev-версию сайта
+## Автоматический деплой проекта
+Создайте в корне проекта файл deploy_star_burger.sh с таким содержимым:
+
+```
+#!/bin/bash
+set -e
+
+echo '----Start command git commit----'
+git commit -m 'Local commit'
+
+echo '----Start command git pull----'
+git pull
+
+echo '----Install NPM----'
+npm install -g n
+sudo n 16.16.0
+
+echo '----Create venv----'
+python -m venv venv
+
+echo '----Activate venv----'
+source venv/bin/activate
+
+echo '----Install Python Library----'
+pip install -r requirements.txt
+
+echo '----Install NodeJs Library----'
+npm ci --dev
+./node_modules/.bin/parcel watch bundles-src/index.js --dist-dir bundles --public-url="./"
+
+echo '----Collect Static----'
+python3 manage.py collectstatic
+
+echo '----Migrate----'
+python3 manage.py migrate
+
+echo '----Restart Systemd----'
+systemctl daemon-reload
+
+echo '----Restart Nginx----'
+systemctl restart nginx
+
+echo '----SUCCES Deploy----'
+```
+
+Выдайте ему права на исполнение:
+```shell
+chmod ugo+x deploy_star_burger.sh
+```
+
+Запустите скрипт для автоматического деплоя:
+```shell
+./deploy_star_burger.sh
+```
+
+## Как запустить dev-версию сайта (вручную)
 
 Для запуска сайта нужно запустить **одновременно** бэкенд и фронтенд, в двух терминалах.
 
-### Как собрать бэкенд
+### Как собрать бэкенд 
 
 Скачайте код:
 ```sh
@@ -133,14 +188,7 @@ Parcel будет следить за файлами в каталоге `bundle
 
 **Сбросьте кэш браузера <kbd>Ctrl-F5</kbd>.** Браузер при любой возможности старается кэшировать файлы статики: CSS, картинки и js-код. Порой это приводит к странному поведению сайта, когда код уже давно изменился, но браузер этого не замечает и продолжает использовать старую закэшированную версию. В норме Parcel решает эту проблему самостоятельно. Он следит за пересборкой фронтенда и предупреждает JS-код в браузере о необходимости подтянуть свежий код. Но если вдруг что-то у вас идёт не так, то начните ремонт со сброса браузерного кэша, жмите <kbd>Ctrl-F5</kbd>.
 
-
-## Как запустить prod-версию сайта
-
-Собрать фронтенд:
-
-```sh
-./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
-```
+## Переменные окружения
 
 Настроить бэкенд: создать файл `.env` в каталоге `star_burger/` со следующими настройками:
 

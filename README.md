@@ -33,7 +33,7 @@
 # source venv/bin/activate
 ```
 
-Выйдайте права на исполнение скрипту
+Выдайте права на исполнение скрипту
 
 ```shell
 chmod ugo+x deploy_star_burger.sh

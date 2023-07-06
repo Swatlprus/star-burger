@@ -16,7 +16,24 @@
 Третий интерфейс — это админка. Преимущественно им пользуются программисты при разработке сайта. Также сюда заходит менеджер, чтобы обновить меню ресторанов Star Burger.
 
 ## Автоматический деплой проекта
-Выйдайте права на исполнение
+
+Подключитесь к своему серверу и подготовьте его к установке пакетов Python:
+```
+# apt update
+# apt install python3-pip
+# pip3 install virtualenv
+```
+
+Скачайте на сервер код проекта и установите его зависимости:
+```
+# cd /opt/
+# git clone git@github.com:Swatlprus/star-burger.git
+# cd /opt/myip-multi-framework/
+# virtualenv --python=python3 venv
+# source venv/bin/activate
+```
+
+Выйдайте права на исполнение скрипту
 
 ```shell
 chmod ugo+x deploy_star_burger.sh

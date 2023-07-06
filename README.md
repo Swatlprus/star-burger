@@ -16,68 +16,8 @@
 Третий интерфейс — это админка. Преимущественно им пользуются программисты при разработке сайта. Также сюда заходит менеджер, чтобы обновить меню ресторанов Star Burger.
 
 ## Автоматический деплой проекта
-Создайте в корне проекта файл deploy_star_burger.sh с таким содержимым. Не забудьте поставить ROLLBAR_TOKEN:
+Выйдайте права на исполнение
 
-```
-#!/bin/bash
-set -e
-
-source .env
-
-echo '----Start command git commit----'
-git commit -m 'Local commit'
-
-echo '----Start command git pull----'
-git pull
-
-echo '----Install NPM----'
-npm install -g n
-sudo n 16.16.0
-
-echo '----Create venv----'
-python -m venv venv
-
-echo '----Activate venv----'
-source venv/bin/activate
-
-echo '----Install Python Library----'
-pip install -r requirements.txt
-
-echo '----Install NodeJs Library----'
-npm ci --dev
-./node_modules/.bin/parcel watch bundles-src/index.js --dist-dir bundles --public-url="./"
-
-echo '----Collect Static----'
-python3 manage.py collectstatic
-
-echo '----Migrate----'
-python3 manage.py migrate
-
-echo '----Restart Systemd----'
-systemctl daemon-reload
-
-echo '----Restart Nginx----'
-systemctl restart nginx
-
-echo '----Send status in Rollbar----'
-hash=$(git rev-parse HEAD)
-
-export ROLLBAR_TOKEN
-ROLLBAR_TOKEN=$ROLLBAR_TOKEN
-
-curl https://api.rollbar.com/api/1/deploy/ \
-  -F access_token=$ROLLBAR_TOKEN \
-  -F environment=production \
-  -F revision=$hash \
-  -F local_username=$USER \
-  -F comment="Deployed new version" \
-  -F status=finished
-
-echo '----SUCCES Deploy----'
-
-```
-
-Выдайте ему права на исполнение:
 ```shell
 chmod ugo+x deploy_star_burger.sh
 ```
@@ -109,7 +49,7 @@ cd star-burger
 ```sh
 python --version
 ```
-**Важно!** Версия Python должна быть не ниже 3.6.
+**Важно!** Версия Python должна быть не ниже 3.10.
 
 Возможно, вместо команды `python` здесь и в остальных инструкциях этого README придётся использовать `python3`. Зависит это от операционной системы и от того, установлен ли у вас Python старой второй версии. 
 

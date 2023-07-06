@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-export ROLLBAR_TOKEN
+source .env
 
 echo '----Start command git commit----'
 git commit -m 'Local commit'
@@ -8,17 +8,12 @@ git commit -m 'Local commit'
 echo '----Start command git pull----'
 git pull
 
-echo '----Create venv----'
-python -m venv venv
-
-echo '----Activate venv----'
-source venv/bin/activate
-
 echo '----Install Python Library----'
 pip install -r requirements.txt
 
 echo '----Install NodeJs Library----'
 npm ci --dev
+./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
 
 echo '----Collect Static----'
 python3 manage.py collectstatic --no-input
@@ -35,14 +30,12 @@ systemctl restart nginx
 echo '----Send status in Rollbar----'
 hash=$(git rev-parse HEAD)
 
-ROLLBAR_TOKEN=$ROLLBAR_TOKEN
-
 curl https://api.rollbar.com/api/1/deploy/ \
   -F access_token=$ROLLBAR_TOKEN \
-  -F environment=production \
+  -F environment=$ROLLBAR_ENVIROMENT \
   -F revision=$hash \
   -F local_username=$USER \
   -F comment="Deployed new version" \
-  -F status=finished
+  -F status=succeeded
 
 echo '----SUCCES Deploy----'

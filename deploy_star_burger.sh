@@ -21,9 +21,6 @@ python3 manage.py collectstatic --no-input
 echo '----Migrate----'
 python3 manage.py migrate --no-input
 
-echo '----Restart Systemd----'
-systemctl daemon-reload
-
 echo '----Restart Nginx----'
 systemctl restart nginx
 
